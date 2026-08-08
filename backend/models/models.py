@@ -119,6 +119,7 @@ class Lap(Base):
     driver_id: Mapped[int] = mapped_column(ForeignKey("drivers.id"), index=True)
     lap_number: Mapped[int] = mapped_column(Integer)
     lap_time_ms: Mapped[int | None] = mapped_column(Integer)  # milliseconds, not float seconds
+    cumulative_time_ms: Mapped[int | None] = mapped_column(Integer)
     position: Mapped[int | None] = mapped_column(Integer)
     sector_1_ms: Mapped[int | None] = mapped_column(Integer)
     sector_2_ms: Mapped[int | None] = mapped_column(Integer)

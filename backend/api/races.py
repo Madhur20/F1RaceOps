@@ -14,6 +14,8 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.models import Driver, Lap, Race
 from backend.schemas import LapOut, RaceDetail, RaceSummary
+from backend.schemas.race_state import RaceStateSnapshot
+from backend.services import get_race_state
 
 router = APIRouter(prefix="/races", tags=["races"])
 
@@ -80,3 +82,27 @@ def get_race_laps(
         )
         for lap in laps
     ]
+
+
+@router.get("/{race_id}/state", response_model=RaceStateSnapshot)
+def get_race_state_snapshot(
+    race_id: int,
+    lap: int = Query(..., ge=1, description="Lap number to snapshot the race state at"),
+    db: Session = Depends(get_db),
+):
+    race = db.get(Race, race_id)
+    if race is None:
+        raise HTTPException(status_code=404, detail=f"Race {race_id} not found")
+    if race.total_laps is not None and lap > race.total_laps:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Race {race_id} only has {race.total_laps} laps; lap {lap} is out of range.",
+        )
+
+    snapshot = get_race_state(db, race_id, lap)
+    if snapshot is None or not snapshot.drivers:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No lap data found for race {race_id} at lap {lap}.",
+        )
+    return snapshot
