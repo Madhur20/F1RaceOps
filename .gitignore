@@ -1,0 +1,6 @@
+fastf1_cache/
+venv/
+.env
+__pycache__/
+scripts/telemetry_report_detail.csv
+scripts/telemetry_report_summary.csv
