@@ -177,7 +177,7 @@ def simulate_reactive(model: dict, current_tyre_age: int, remaining_laps: int,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="RaceOps M1 spike: pit strategy Monte Carlo")
+    parser = argparse.ArgumentParser(description="F1RaceOps M1 spike: pit strategy Monte Carlo")
     parser.add_argument("--year", type=int, default=2023)
     parser.add_argument("--event", type=str, default="Bahrain")
     parser.add_argument("--driver", type=str, default="VER", help="Three-letter driver code")

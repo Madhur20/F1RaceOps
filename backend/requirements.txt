@@ -1,4 +1,4 @@
-# RaceOps — Python dependencies
+# F1RaceOps — Python dependencies
 # Install: pip install -r requirements.txt   (inside your venv)
 
 # --- Web framework / API ---

@@ -1,9 +1,9 @@
-# RaceOps — Phase 0 Planning Doc
+# F1RaceOps — Phase 0 Planning Doc
 
 ## 1. Product Requirements Document (PRD)
 
 ### Problem
-Race engineers make pit-stop decisions under uncertainty — tire degradation, safety car timing, and rival strategy all interact nonlinearly. Most public F1 content shows *what happened*, not *what the range of good decisions looked like at the time*. RaceOps recreates that decision problem: given a race state, what's the probability distribution over outcomes for each strategy option?
+Race engineers make pit-stop decisions under uncertainty — tire degradation, safety car timing, and rival strategy all interact nonlinearly. Most public F1 content shows *what happened*, not *what the range of good decisions looked like at the time*. F1RaceOps recreates that decision problem: given a race state, what's the probability distribution over outcomes for each strategy option?
 
 ### Target users (portfolio framing)
 - Primary: hiring engineers/recruiters evaluating this as a systems + ML project
@@ -125,9 +125,9 @@ Full OpenAPI spec gets generated automatically from FastAPI — this sketch is j
 
 ## 5. Milestones (GitHub Project Board columns → issues)
 
-- [ ] **M0 — Planning**: this doc reviewed, season/race list finalized, repo scaffolded
-- [ ] **M1 — Spike**: single-race FastF1 pull → DataFrame → naive Monte Carlo → terminal output
-- [ ] **M2 — Data layer**: ingestion scripts for all 5–8 races, schema migrated (Alembic), `/races` `/laps` endpoints live
+- [x] **M0 — Planning**: this doc reviewed, season/race list finalized, repo scaffolded
+- [x] **M1 — Spike**: single-race FastF1 pull → DataFrame → naive Monte Carlo → terminal output
+- [x] **M2 — Data layer**: ingestion scripts for all 5–8 races, schema migrated (Alembic), `/races` `/laps` endpoints live
 - [ ] **M3 — Race state engine**: race-state Pydantic model, snapshot endpoint
 - [ ] **M4 — Physics engine (deterministic)**: tire deg, fuel burn, pit loss, lap time, traffic models
 - [ ] **M5 — ML tire model**: trained model on real degradation data, swappable behind same interface, initial accuracy check
