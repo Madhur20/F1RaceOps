@@ -48,6 +48,39 @@ unchanged by this fix (0.287 -> 0.280 on a synthetic test, 0.745s ->
 a predictive-accuracy trade-off; the model was always capable of learning
 the real signal, it just had an easier shortcut available before.
 
+## Model & training details
+
+**Algorithm:** `sklearn.ensemble.GradientBoostingRegressor` — chosen over a
+simpler linear model because tyre-age/compound/circuit effects plausibly
+interact nonlinearly (e.g., a given compound's degradation rate may itself
+depend on the circuit), which gradient boosting can capture without hand-
+specifying interaction terms the way the deterministic model's linear
+regression would need to.
+
+**Hyperparameters:**
+- `n_estimators=200`, `max_depth=3`, `learning_rate=0.05`, `random_state=42`
+- Chosen as reasonable, moderately conservative defaults (shallow trees,
+  slow learning rate, more estimators to compensate) rather than tuned via
+  a search — appropriate given the dataset's small size (~4,900 laps).
+  A hyperparameter search would risk overfitting to this specific 5-race
+  sample; worth revisiting once more races are ingested.
+
+**Features:**
+- Categorical (one-hot encoded, `handle_unknown="ignore"`): `circuit_ref`,
+  `compound`, `driver_code`
+- Numeric (passthrough): `tyre_age`, `lap_number`
+
+**Target:** lap time, de-meaned by each circuit's own training-set average
+before fitting (see "circuit baseline" fix above) — the model predicts a
+*residual* from circuit baseline, not raw lap time directly.
+
+**Train/test mechanics:** stints are shuffled (seeded, `random_state=42`)
+and split 80/20 at the stint level — an entire stint is either fully train
+or fully test, never split across both, to prevent a stint's own
+degradation trend from leaking across the boundary. On the current
+dataset this yields 194 train stints (3,843 laps) and 48 test stints
+(1,055 laps).
+
 ## Results (real data, stint-level held-out evaluation)
 - 4,898 clean laps across 242 stints, 5 circuits, 28 drivers
 - Train: 3,843 laps / 194 stints — Test: 1,055 laps / 48 stints (held out)

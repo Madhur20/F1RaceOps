@@ -1,53 +1,26 @@
 # F1RaceOps
 
-A production-inspired F1 race strategy platform: real telemetry ingestion,
-a Postgres/FastAPI backend, and a Monte Carlo pit-strategy simulation
-engine, built the way a small engineering team would — design docs and
-architecture decisions before code, and a documented debugging trail
-alongside every milestone.
+I built this because I wanted a portfolio project that actually looks like real engineering work, not just working code, but the planning that came before it and the debugging that happened along the way. It's a race strategy platform for Formula 1: real telemetry data, a Postgres/FastAPI backend, and a Monte Carlo simulator that recommends pit strategies based on actual win probability instead of gut feel.
 
-**Status: actively in development.** The data layer, race state engine,
-and a validated tire-degradation model are complete and tested against
-real 2021–2023 F1 data. The full Monte Carlo strategy simulator (proven
-out in an early prototype) is being integrated into the live API next.
-See [Roadmap](#roadmap) below for exactly what's done vs. in progress —
-nothing in this README describes a feature that doesn't actually work
-today.
+**Where things stand:** the data pipeline, race state engine, tire degradation model, and the full Monte Carlo strategy simulator are all built, tested, and live behind a real API, including multi-stop strategies with a different tire compound per stint. What's left is mostly polish: a dashboard, a proper test suite, and CI. I've tried to keep this README honest about what's actually working versus what's still on the list, so check the [roadmap](#roadmap) at the bottom rather than assuming everything here is finished.
 
 ## What this is
 
-Race engineers decide when to pit under real uncertainty: tire wear,
-safety car timing, and rival strategy all interact nonlinearly. F1RaceOps
-recreates that decision problem — given a real race's data at any lap,
-simulate thousands of possible outcomes per pit-stop strategy and compare
-them on actual win probability, not just intuition.
+Race engineers have to decide when to pit under real uncertainty, tire wear, safety car timing, what the other teams are doing. This project recreates that decision: given a real race at any lap, it simulates thousands of possible outcomes for different pit strategies and compares them on actual win probability rather than intuition.
 
-## Why this project is built the way it is
+## Why I documented this so heavily
 
-Most portfolio projects show finished code. This one also shows the
-process — because that's closer to what the job actually is. Every
-milestone in [`docs/`](./docs) has two documents: a summary of what was
-built and why, and a debugging log of what went wrong and how it was
-diagnosed. A few examples worth a look:
+Most portfolio projects just show the finished code. I wanted this one to also show the process, since that's closer to what the actual job looks like. Every milestone in [`docs/`](./docs) has two files: a summary of what got built and why, and a debugging log of what went wrong and how I tracked it down. A few of my favorites:
 
-- **A statistically invalid Monte Carlo comparison, caught and fixed** —
-  an early strategy comparison silently returned meaningless results
-  because independent random number streams weren't properly paired
-  across strategies. See [`docs/spike-debugging-log.md`](./docs/spike-debugging-log.md).
-- **A regression that looked right but wasn't** — a first fix for a data
-  bug technically worked, but re-testing against real data revealed the
-  underlying approach (summing lap times) was fundamentally fragile, not
-  just buggy in one spot. See [`docs/m3-debugging-log.md`](./docs/m3-debugging-log.md).
-- **A tire-degradation model with a real, catchable confound** — the
-  first fit showed tires appearing to speed up with age, because tyre-age
-  and fuel burn-off are perfectly collinear within a single stint. Fixed
-  by pooling across stints and adding per-race fixed effects. See
-  [`docs/m4-degradation-model.md`](./docs/m4-degradation-model.md).
+- **A Monte Carlo comparison that was quietly meaningless.** An early version compared pit strategies using random numbers that weren't properly paired across strategies, so the "which strategy wins" result was basically noise dressed up as an answer. See [`docs/spike-debugging-log.md`](./docs/spike-debugging-log.md).
+- **A fix that worked but wasn't actually right.** A bug fix for missing race-state data technically solved the symptom, but re-testing against real data showed the whole approach (summing lap times to get elapsed race time) was fragile in a way that would keep causing problems. See [`docs/m3-debugging-log.md`](./docs/m3-debugging-log.md).
+- **A tire model that thought tires got faster with age.** My first degradation fit showed HARD tires wearing faster than SOFT, backwards. Turned out fuel burn-off and circuit baseline pace were both confounding the result. See [`docs/m4-degradation-model.md`](./docs/m4-degradation-model.md).
+- **A strategy engine that recommended wet tires for a bone-dry race.** The multi-stop search once confidently suggested INTERMEDIATE tires at Bahrain, a race with zero rain. The model wasn't broken; it was just missing a constraint I hadn't thought to add (it had no idea wet tires are a different tool, not just a slower-degrading option). See [`docs/m6-debugging-log.md`](./docs/m6-debugging-log.md).
 
 ## Architecture
 
 ```
-        React/Next.js Dashboard  (planned — Phase 5)
+        React/Next.js Dashboard  (planned, next up)
                     │
               REST (JSON)
                     │
@@ -64,39 +37,23 @@ diagnosed. A few examples worth a look:
                 PostgreSQL
 ```
 
-One deployable service, organized so each module could later split into
-its own service without a rewrite — deliberately not over-engineered into
-microservices for a project at this stage. See
-[`docs/decisions/`](./docs/decisions) for the reasoning behind this and
-other architectural calls.
+It's one deployable service, organized so each piece could split into its own service later without a rewrite, I didn't want to over-engineer this into microservices before there was any real reason to. The reasoning behind that and a few other architectural calls is in [`docs/decisions/`](./docs/decisions).
 
 ## Tech stack
 
 **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, PostgreSQL, Pydantic
-**Data:** FastF1, pandas, NumPy (regression/statistics for the degradation model)
+
+**Data / ML:** FastF1, pandas, NumPy, scikit-learn
+
 **Infra:** Docker Compose (Postgres), pytest _(planned)_, GitHub Actions _(planned)_
 
 ## What's implemented today
 
-- **Data pipeline** — ingests real F1 telemetry (laps, stints, pit stops,
-  weather, results) from [FastF1](https://github.com/theOehrly/Fast-F1)
-  for 5 races spanning 2021–2023, chosen deliberately to cover
-  high-degradation, low-degradation, safety-car-prone, and wet-race
-  conditions, each verified against FastF1's own data-quality flags
-  before inclusion.
-- **Live API** — `GET /races`, `GET /races/{id}`, `GET /races/{id}/laps`,
-  `GET /races/{id}/state?lap=N` (a full race-state snapshot: positions,
-  gaps, tire age, weather), all backed by real ingested data.
-- **Tire degradation model** — a per-compound degradation rate fit from
-  real lap data, using a regression that separates the tire-aging effect
-  from the confounding fuel-burn effect and controls for each circuit's
-  own baseline pace. Validated result: degradation increases in the
-  expected order (INTERMEDIATE < HARD < MEDIUM < SOFT).
-- **Monte Carlo pit-strategy simulator (prototype)** — simulates thousands
-  of race outcomes per candidate strategy, including a safety-car-reactive
-  strategy, using common random numbers for statistically valid
-  strategy-vs-strategy comparison. Currently a standalone script; being
-  wired into the live API next.
+- **Data pipeline**, pulls real F1 telemetry (laps, stints, pit stops, weather, results) from [FastF1](https://github.com/theOehrly/Fast-F1) for 5 races spanning 2021–2023. I picked them deliberately to cover a high-degradation circuit, a low-degradation one, a safety-car-prone one, and a wet race, each verified against FastF1's own data-quality flags before I trusted it.
+- **Live API**, `GET /races`, `GET /races/{id}`, `GET /races/{id}/laps`, `GET /races/{id}/state?lap=N` (a full race snapshot: positions, gaps, tire age, weather), all backed by real ingested data.
+- **Tire degradation model**, a per-compound degradation rate fit from real lap data, using a regression that separates the tire-aging effect from confounding fuel-burn and circuit-baseline effects. Validated result: degradation increases in the order you'd actually expect on track, INTERMEDIATE < HARD < MEDIUM < SOFT.
+- **ML degradation model**, a gradient-boosted alternative to the model above, trained and validated on held-out real laps (0.73s mean absolute error), included mainly to give this project a real "trained and benchmarked a model" story alongside the statistical one.
+- **Monte Carlo strategy simulator, live**, `POST /strategy/simulate` runs thousands of simulated outcomes per candidate strategy using common random numbers for a statistically valid comparison, including a safety-car-reactive strategy and multi-stop strategies with a different compound per stint.
 
 ## Getting started
 
@@ -122,6 +79,14 @@ uvicorn backend.main:app --reload --port 8000
 # → http://localhost:8000/docs for interactive API docs
 ```
 
+Try the strategy simulator once it's running:
+
+```bash
+curl -X POST http://localhost:8000/strategy/simulate -H "Content-Type: application/json" -d '{
+  "race_id": 1, "driver_code": "VER", "current_lap": 20, "current_tyre_age": 15, "compound": "MEDIUM"
+}'
+```
+
 ## Project structure
 
 ```
@@ -143,14 +108,14 @@ f1raceops/
 
 ## Roadmap
 
-- [x] **M0** — Planning: PRD, architecture, schema, API contract
-- [x] **M1** — Spike: prove the core Monte Carlo idea works on real data
-- [x] **M2** — Data layer: ingestion + schema + live API
-- [x] **M3** — Race state engine
-- [x] **M4** — Physics/strategy engine: real degradation model _(in progress — pit-loss and fuel models next)_
-- [ ] **M5** — ML tire model, trained on real lap data, compared against the deterministic version
-- [ ] **M6** — Full Monte Carlo engine wired into a live `/strategy/simulate` endpoint
-- [ ] **M7** — Dashboard (Next.js)
-- [ ] **M8** — Testing, CI/CD, structured logging, model evaluation notebook
+- [x] **M0**, Planning: PRD, architecture, schema, API contract
+- [x] **M1**, Spike: prove the core Monte Carlo idea works on real data
+- [x] **M2**, Data layer: ingestion + schema + live API
+- [x] **M3**, Race state engine
+- [x] **M4**, Physics/strategy engine: degradation, pit-loss, and fuel models, all real
+- [x] **M5**, ML tire model, trained and validated against the deterministic version
+- [x] **M6**, Monte Carlo engine live at `/strategy/simulate`, including multi-stop strategies
+- [ ] **M7**, Dashboard (Next.js)
+- [ ] **M8**, Testing, CI/CD, structured logging, model evaluation notebook
 
-Full detail on each milestone is in [`docs/`](./docs).
+Full detail on every milestone is in [`docs/`](./docs).

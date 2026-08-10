@@ -13,7 +13,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from backend.api import races_router
+from backend.api import races_router, strategy_router
 
 load_dotenv()
 
@@ -24,6 +24,7 @@ app = FastAPI(
 )
 
 app.include_router(races_router)
+app.include_router(strategy_router)
 
 
 @app.get("/health")
