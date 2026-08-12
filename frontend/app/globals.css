@@ -1,0 +1,33 @@
+/* stylelint-disable at-rule-no-unknown */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+@layer base {
+  body {
+    @apply bg-bg text-text font-body;
+    font-feature-settings: "tnum" 1; /* tabular numbers for timing data */
+  }
+
+  ::selection {
+    @apply bg-fastest/30 text-text;
+  }
+
+  /* Visible keyboard focus everywhere — not an afterthought */
+  :focus-visible {
+    outline: 2px solid theme("colors.fastest");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-surface border border-border rounded;
+  }
+
+  .compound-pill {
+    @apply inline-flex items-center justify-center rounded-sm px-1.5 py-0.5
+           text-xs font-mono font-semibold tracking-wide;
+  }
+}

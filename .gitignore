@@ -4,3 +4,5 @@ venv/
 __pycache__/
 scripts/telemetry_report_detail.csv
 scripts/telemetry_report_summary.csv
+frontend/node_modules/
+frontend/.next/

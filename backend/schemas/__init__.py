@@ -1,3 +1,3 @@
-from backend.schemas.race import LapOut, RaceDetail, RaceSummary
+from backend.schemas.race import LapOut, RaceDetail, RaceResultOut, RaceSummary
 
-__all__ = ["LapOut", "RaceDetail", "RaceSummary"]
+__all__ = ["LapOut", "RaceDetail", "RaceResultOut", "RaceSummary"]

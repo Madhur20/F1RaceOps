@@ -12,8 +12,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import Driver, Lap, Race
-from backend.schemas import LapOut, RaceDetail, RaceSummary
+from backend.models import Circuit, Constructor, Driver, Lap, Race, RaceResult
+from backend.schemas import LapOut, RaceDetail, RaceResultOut, RaceSummary
 from backend.schemas.race_state import RaceStateSnapshot
 from backend.services import get_race_state
 
@@ -29,7 +29,14 @@ def list_races(
     if season is not None:
         stmt = stmt.where(Race.season == season)
     races = db.execute(stmt).scalars().all()
-    return races  # RaceSummary fields all map directly — from_attributes handles this
+    return [
+        RaceSummary(
+            id=r.id, season=r.season, round=r.round, name=r.name,
+            race_date=r.race_date, total_laps=r.total_laps,
+            circuit_name=r.circuit.name if r.circuit else None,
+        )
+        for r in races
+    ]
 
 
 @router.get("/{race_id}", response_model=RaceDetail)
@@ -48,6 +55,32 @@ def get_race(race_id: int, db: Session = Depends(get_db)):
         circuit_name=race.circuit.name if race.circuit else None,
         circuit_country=race.circuit.country if race.circuit else None,
     )
+
+
+@router.get("/{race_id}/results", response_model=list[RaceResultOut])
+def get_race_results(race_id: int, db: Session = Depends(get_db)):
+    race = db.get(Race, race_id)
+    if race is None:
+        raise HTTPException(status_code=404, detail=f"Race {race_id} not found")
+
+    stmt = (
+        select(RaceResult)
+        .where(RaceResult.race_id == race_id)
+        .order_by(RaceResult.finish_position.asc().nulls_last())
+    )
+    results = db.execute(stmt).scalars().all()
+
+    return [
+        RaceResultOut(
+            driver_code=r.driver.code if r.driver else None,
+            constructor_name=r.constructor.name if r.constructor else None,
+            grid_position=r.grid_position,
+            finish_position=r.finish_position,
+            status=r.status,
+            points=r.points,
+        )
+        for r in results
+    ]
 
 
 @router.get("/{race_id}/laps", response_model=list[LapOut])

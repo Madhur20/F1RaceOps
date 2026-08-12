@@ -12,6 +12,7 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api import races_router, strategy_router
 
@@ -21,6 +22,14 @@ app = FastAPI(
     title="F1RaceOps API",
     description="Race strategy platform: real F1 race data and Monte Carlo pit-strategy simulation.",
     version="0.1.0",
+)
+
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(races_router)
