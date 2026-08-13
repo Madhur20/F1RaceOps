@@ -4,6 +4,8 @@ I built this because I wanted a portfolio project that actually looks like real 
 
 **Where things stand:** the data pipeline, race state engine, tire degradation model, and the full Monte Carlo strategy simulator are all built, tested, and live behind a real API, including multi-stop strategies with a different tire compound per stint. What's left is mostly polish: a dashboard, a proper test suite, and CI. I've tried to keep this README honest about what's actually working versus what's still on the list, so check the [roadmap](#roadmap) at the bottom rather than assuming everything here is finished.
 
+https://github.com/user-attachments/assets/c0eb8829-4aa0-48fb-ac18-2e31c68872ca
+
 ## What this is
 
 Race engineers have to decide when to pit under real uncertainty, tire wear, safety car timing, what the other teams are doing. This project recreates that decision: given a real race at any lap, it simulates thousands of possible outcomes for different pit strategies and compares them on actual win probability rather than intuition.
@@ -115,7 +117,7 @@ f1raceops/
 - [x] **M4**, Physics/strategy engine: degradation, pit-loss, and fuel models, all real
 - [x] **M5**, ML tire model, trained and validated against the deterministic version
 - [x] **M6**, Monte Carlo engine live at `/strategy/simulate`, including multi-stop strategies
-- [ ] **M7**, Dashboard (Next.js)
+- [x] **M7**, Dashboard (Next.js)
 - [ ] **M8**, Testing, CI/CD, structured logging, model evaluation notebook
 
 Full detail on every milestone is in [`docs/`](./docs).
