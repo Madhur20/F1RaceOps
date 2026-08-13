@@ -14,11 +14,30 @@ from sqlalchemy.orm import Session, sessionmaker
 
 load_dotenv()
 
+
+def _normalize_database_url(url: str) -> str:
+    """
+    Some managed Postgres providers (older Heroku-style URLs in particular,
+    and this varies enough across providers to be worth handling
+    defensively rather than assuming) hand back a bare `postgres://` scheme,
+    which SQLAlchemy does not recognize at all — it must be `postgresql://`.
+    Also explicitly forces the psycopg2 dialect rather than relying on
+    SQLAlchemy's default driver resolution for `postgresql://`, since that
+    default has changed across versions and being explicit is safer.
+    """
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError(
-        "DATABASE_URL is not set. Copy to .env at the repo root."
+        "DATABASE_URL is not set. Copy .env.example to .env at the repo root."
     )
+DATABASE_URL = _normalize_database_url(DATABASE_URL)
 
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)

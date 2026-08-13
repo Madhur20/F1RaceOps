@@ -36,6 +36,16 @@ if not database_url:
         "DATABASE_URL is not set. Copy .env.example to .env at the repo root "
         "and make sure it's loaded before running alembic."
     )
+# Same normalization as backend/database.py — some managed Postgres
+# providers hand back a bare postgres:// scheme SQLAlchemy doesn't
+# recognize, and being explicit about the psycopg2 dialect is safer than
+# relying on SQLAlchemy's default driver resolution. Duplicated here
+# (rather than imported) to avoid pulling in backend.database's own
+# import-time DATABASE_URL check into Alembic's separate startup path.
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata

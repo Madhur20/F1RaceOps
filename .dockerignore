@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.env.local
+fastf1_cache/
+node_modules/
+.next/
+frontend/
+.git/
+*.egg-info/
